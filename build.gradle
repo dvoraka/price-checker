@@ -1,10 +1,72 @@
-apply plugin: 'java'
+buildscript {
+    ext {
+        springBootVersion = '2.0.0.M2'
+    }
+    repositories {
+        mavenCentral()
+        maven { url "https://repo.spring.io/snapshot" }
+        maven { url "https://repo.spring.io/milestone" }
+    }
+    dependencies {
+        classpath("org.springframework.boot:spring-boot-gradle-plugin:${springBootVersion}")
+    }
+}
 
+apply plugin: 'java'
+apply plugin: 'groovy'
+apply plugin: 'io.spring.dependency-management'
+apply plugin: 'org.springframework.boot'
+apply plugin: 'idea'
+
+
+version = '0.1-SNAPSHOT'
+sourceCompatibility = 1.8
 
 repositories {
     mavenCentral()
     jcenter()
+
+    maven { url "https://repo.spring.io/snapshot" }
+    maven { url "https://repo.spring.io/milestone" }
 }
 
 dependencies {
+    compile('org.springframework.boot:spring-boot')
+
+    testCompile('org.springframework.boot:spring-boot-starter-test')
+
+    testCompile('org.spockframework:spock-core:1.1-groovy-2.4')
+    testCompile('org.spockframework:spock-spring:1.1-groovy-2.4')
+}
+
+sourceSets {
+    // integration tests
+    integrationTest {
+        groovy {
+            compileClasspath += main.output + test.output
+            runtimeClasspath += main.output + test.output
+            srcDir file('src/integration-test/groovy')
+        }
+        resources.srcDir file('src/integration-test/resources')
+    }
+}
+
+configurations {
+    // IT
+    integrationTestCompile.extendsFrom testCompile
+    integrationTestRuntime.extendsFrom testRuntime
+}
+
+task integrationTest(type: Test) {
+    testClassesDirs = sourceSets.integrationTest.output.classesDirs
+    classpath = sourceSets.integrationTest.runtimeClasspath
+
+    mustRunAfter test
+}
+
+check.dependsOn integrationTest
+
+
+task wrapper(type: Wrapper) {
+    gradleVersion = '4.0.2'
 }
